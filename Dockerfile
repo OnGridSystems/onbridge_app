@@ -11,6 +11,8 @@ RUN yarn
 RUN yarn build
 
 FROM nginx:latest
+ENV PORT 8080
+EXPOSE 8080
 COPY nginx.conf /etc/nginx/conf.d/nginx.conf
 COPY --from=build /app/build /usr/share/nginx/html
 COPY token_metadata/ /token_metadata
