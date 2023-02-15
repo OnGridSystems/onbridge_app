@@ -14,7 +14,7 @@ export function getTokensInfo(params = {}) {
   const pageParam = page ? `&page=${page}` : ''
   return axios
     .get(
-      `${host}/tokens/?owner=${account}&chainId=${Object.keys(chainsId).join(
+      `/tokens/?owner=${account}&chainId=${Object.keys(chainsId).join(
         ',',
       )}${pageParam}`,
     )
