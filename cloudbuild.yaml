@@ -14,7 +14,6 @@ steps:
       [
         'run', 'deploy', '${_SERVICE_NAME}',
         '--image', 'gcr.io/${PROJECT_ID}/${_SERVICE_NAME}',
-        '--add-cloudsql-instances', '${PROJECT_ID}:${_REGION}:${_DB_INSTANCE_NAME}',
         '--allow-unauthenticated',
         '--region', '${_REGION}',
         '--update-env-vars', 'REACT_APP_API_HOST=${_REACT_APP_API_HOST}',
