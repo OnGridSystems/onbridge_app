@@ -1,0 +1,26 @@
+steps:
+  - id: "build image"
+    name: "gcr.io/cloud-builders/docker"
+    args: ["build", "-t", "gcr.io/${PROJECT_ID}/${_SERVICE_NAME}", "."]
+
+  - id: "push image"
+    name: "gcr.io/cloud-builders/docker"
+    args: ["push", "gcr.io/${PROJECT_ID}/${_SERVICE_NAME}"]
+
+  - id: "deploy to cloud run"
+    name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+      [
+        'run', 'deploy', '${_SERVICE_NAME}',
+        '--image', 'gcr.io/${PROJECT_ID}/${_SERVICE_NAME}',
+        '--add-cloudsql-instances', '${PROJECT_ID}:${_REGION}:${_DB_INSTANCE_NAME}',
+        '--allow-unauthenticated',
+        '--region', '${_REGION}',
+        '--update-env-vars', 'REACT_APP_API_HOST=${_REACT_APP_API_HOST}',
+        '--update-env-vars', 'REACT_APP_L1_CHAIN_ID=${_REACT_APP_L1_CHAIN_ID}',
+        '--update-env-vars', 'REACT_APP_L2_CHAIN_ID=${_REACT_APP_L2_CHAIN_ID}'
+      ]
+
+images:
+  - "gcr.io/${PROJECT_ID}/${_SERVICE_NAME}"
