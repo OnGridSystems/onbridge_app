@@ -1,11 +1,10 @@
 steps:
   - id: "build image"
     name: "gcr.io/cloud-builders/docker"
-    args: ["build", "-t", "gcr.io/${PROJECT_ID}/${_SERVICE_NAME}", "."]
-
+    args: ["build", "-t", "${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_IMAGE}", "."]
   - id: "push image"
     name: "gcr.io/cloud-builders/docker"
-    args: ["push", "gcr.io/${PROJECT_ID}/${_SERVICE_NAME}"]
+    args: ["push", "${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_IMAGE}"]
 
   - id: "deploy to cloud run"
     name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
@@ -13,13 +12,29 @@ steps:
     args:
       [
         'run', 'deploy', '${_SERVICE_NAME}',
-        '--image', 'gcr.io/${PROJECT_ID}/${_SERVICE_NAME}',
+        '--image', "${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_IMAGE}",
         '--allow-unauthenticated',
         '--region', '${_REGION}',
         '--update-env-vars', 'REACT_APP_API_HOST=${_REACT_APP_API_HOST}',
         '--update-env-vars', 'REACT_APP_L1_CHAIN_ID=${_REACT_APP_L1_CHAIN_ID}',
-        '--update-env-vars', 'REACT_APP_L2_CHAIN_ID=${_REACT_APP_L2_CHAIN_ID}'
+        '--update-env-vars', 'REACT_APP_L2_CHAIN_ID=${_REACT_APP_L2_CHAIN_ID}',
       ]
+  - id: "prune extra images from artifact registry"
+    name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: 'bash'
+    args:
+      - "-c"
+      - |
+        counter=0
+        while read line; do
+          read -a line_data <<< "$line"
+          if [[ ! "${line_data[0]}" =~ ^IMAGE ]]; then
+            counter=$((counter+1))
+            if (( counter > 3)); then
+              gcloud artifacts docker images delete ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_IMAGE}@"${line_data[1]}" --quiet 
+            fi
+          fi
+          done <<< "$(gcloud artifacts docker images list ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_IMAGE} --sort-by ~CREATE_TIME)"
 
 images:
-  - "gcr.io/${PROJECT_ID}/${_SERVICE_NAME}"
+  - "${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_IMAGE}"
